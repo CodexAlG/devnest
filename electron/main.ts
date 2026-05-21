@@ -24,7 +24,12 @@ function createWindow(): BrowserWindow {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com",
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co " +
+          "https://*.supabase.in wss://*.supabase.in " +
+          "https://api.anthropic.com ws://localhost:* wss://localhost:*; " +
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+          "style-src 'self' 'unsafe-inline';",
         ],
       },
     });

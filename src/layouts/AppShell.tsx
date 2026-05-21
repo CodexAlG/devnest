@@ -11,7 +11,7 @@ const navItems = [
 ];
 
 const commItems = [
-  { path: "/chat", label: "Chat", icon: "\u25FB" },
+  { path: "/chat", label: "Chat", icon: "\u25FB", badge: 0 },
   { path: "/reportes", label: "Reportes", icon: "\u220E" },
 ];
 
@@ -145,6 +145,19 @@ export default function AppShell(): React.JSX.Element {
                 {item.icon}
               </span>
               {item.label}
+              {"badge" in item && typeof item.badge === "number" && item.badge > 0 && (
+                <span style={{
+                  marginLeft: "auto",
+                  background: "var(--accent)",
+                  color: "#fff",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  padding: "1px 5px",
+                  borderRadius: "10px",
+                }}>
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
 
@@ -195,6 +208,19 @@ export default function AppShell(): React.JSX.Element {
                 {item.icon}
               </span>
               {item.label}
+              {"badge" in item && item.badge !== undefined && item.badge > 0 && (
+                <span style={{
+                  marginLeft: "auto",
+                  background: "var(--accent)",
+                  color: "#fff",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  padding: "1px 5px",
+                  borderRadius: "10px",
+                }}>
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

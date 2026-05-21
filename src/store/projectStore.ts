@@ -171,6 +171,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         role_in_project: "lead",
       });
 
+      await supabase.from("channels").insert({
+        project_id: project.id,
+        name: project.name.toLowerCase().replace(/\s+/g, "-"),
+        type: "project",
+        created_by: user.user.id,
+      });
+
       set((state) => ({
         projects: [project, ...state.projects],
         loading: false,

@@ -65,3 +65,24 @@ export interface Task {
   assignee?: AppUser;
   reporter?: AppUser;
 }
+
+export interface Channel {
+  id: string;
+  project_id?: string | null;
+  name: string;
+  type: "general" | "project" | "direct";
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  channel_id: string;
+  sender_id?: string | null;
+  content: string;
+  is_ai_response: boolean;
+  reply_to_id?: string | null;
+  created_at: string;
+  edited_at?: string | null;
+  sender?: AppUser;
+}
