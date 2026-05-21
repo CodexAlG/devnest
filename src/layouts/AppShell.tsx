@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthStore } from "../store/authStore";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: "\u229E" },
@@ -26,7 +26,7 @@ const pageTitles: Record<string, string> = {
 };
 
 export default function AppShell(): React.JSX.Element {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore();
   const [title, setTitle] = useState("Dashboard");
 
   useEffect(() => {
@@ -44,11 +44,17 @@ export default function AppShell(): React.JSX.Element {
   const initials = user?.name
     ? user.name
         .split(" ")
-        .map((n) => n[0])
+        .map((n: string) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
     : "??";
+
+  const roleLabel: Record<string, string> = {
+    admin: "Administrador",
+    coordinator: "Coordinador",
+    intern: "Practicante",
+  };
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
@@ -195,11 +201,12 @@ export default function AppShell(): React.JSX.Element {
 
         <div
           style={{
-            padding: "12px 16px",
-            borderTop: "1px solid var(--border)",
             display: "flex",
             alignItems: "center",
             gap: "10px",
+            padding: "12px 16px",
+            borderTop: "1px solid var(--border)",
+            marginTop: "auto",
           }}
         >
           <div
@@ -207,32 +214,34 @@ export default function AppShell(): React.JSX.Element {
               width: "32px",
               height: "32px",
               borderRadius: "50%",
-              background: "var(--accent-soft)",
-              color: "var(--accent)",
+              background: "var(--accent)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontWeight: 700,
               fontSize: "12px",
+              fontWeight: "bold",
+              color: "white",
               flexShrink: 0,
             }}
           >
             {initials}
           </div>
-          <div style={{ overflow: "hidden", flex: 1 }}>
-            <p
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
               style={{
-                fontWeight: 600,
                 fontSize: "13px",
+                fontWeight: "500",
                 color: "var(--text-primary)",
-                whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              {user?.name || "Usuario"}
-            </p>
-            <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>{user?.role}</p>
+              {user?.name ?? "Usuario"}
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+              {roleLabel[user?.role ?? ""] ?? user?.role ?? ""}
+            </div>
           </div>
           <button
             onClick={logout}
@@ -240,14 +249,16 @@ export default function AppShell(): React.JSX.Element {
             style={{
               background: "none",
               border: "none",
-              color: "var(--text-muted)",
               cursor: "pointer",
+              color: "var(--text-muted)",
               fontSize: "16px",
               padding: "4px",
-              lineHeight: 1,
+              borderRadius: "var(--radius-sm)",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--danger)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
           >
-            &#x23FB;
+            ⏻
           </button>
         </div>
       </aside>

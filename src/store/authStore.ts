@@ -32,32 +32,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email: string, password: string) => {
     set({ loading: true, error: null });
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
+      console.log("[AUTH] Intentando login...");
+
+      const result = await supabase.auth.signInWithPassword({ email, password });
+
+      console.log("[AUTH] Resultado:", result);
+
+      if (result.error) {
+        set({ loading: false, error: result.error.message });
+        return;
+      }
 
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", data.user.id)
-        .maybeSingle();
-
-      if (!profile) {
-        throw new Error("Perfil no encontrado. Contactá al administrador.");
-      }
+        .eq("id", result.data.user.id)
+        .single();
 
       set({
-        user: profile as AppUser,
-        session: data.session,
+        session: result.data.session,
+        user: profile ?? null,
         loading: false,
       });
     } catch (err) {
-      set({
-        error: err instanceof Error ? err.message : "Error al iniciar sesión",
-        loading: false,
-      });
+      console.error("[AUTH] Error:", err);
+      set({ loading: false, error: String(err) });
     }
   },
 
@@ -93,23 +92,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => set({ error: null }),
   setUser: (user) => set({ user }),
-  setSession: async (session) => {
-    set({ session });
-    if (session?.user) {
-      const { data: profile } = await supabase
+  setSession: async (session: Session | null): Promise<void> => {
+    if (!session) {
+      set({ session: null, user: null, loading: false });
+      return;
+    }
+
+    set({ session, loading: true });
+
+    try {
+      console.log("[AUTH] Cargando perfil para:", session.user.id);
+
+      const { data: profile, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
-        .maybeSingle();
-      if (profile) {
-        set({ user: profile as AppUser });
-      } else {
-        set({ user: null, error: "Perfil no encontrado" });
+        .single();
+
+      console.log("[AUTH] Perfil obtenido:", profile, error);
+
+      if (error || !profile) {
+        console.error("[AUTH] No se encontró perfil:", error);
+        set({ loading: false, user: null });
+        return;
       }
-    } else {
-      set({ user: null });
+
+      set({ user: profile, loading: false });
+    } catch (err) {
+      console.error("[AUTH] Error cargando perfil:", err);
+      set({ loading: false });
     }
-    set({ loading: false });
   },
   setLoading: (loading) => set({ loading }),
 }));

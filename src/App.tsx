@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "./services/supabase";
 import { useAuthStore } from "./store/authStore";
 import AppShell from "./layouts/AppShell";
@@ -7,21 +7,61 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import ProjectsPage from "./pages/Projects/ProjectsPage";
+import BoardPage from "./pages/Board/BoardPage";
+import BacklogPage from "./pages/Backlog/BacklogPage";
+import SprintsPage from "./pages/Sprints/SprintsPage";
 
 export default function App(): React.JSX.Element {
   const { setSession } = useAuthStore();
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+      })
+      .finally(() => setInitializing(false));
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
     return () => subscription.unsubscribe();
   }, [setSession]);
+
+  if (initializing) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          background: "var(--bg-base)",
+          color: "var(--text-muted)",
+          fontFamily: "var(--font)",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              fontSize: "24px",
+              color: "var(--accent)",
+              fontWeight: "bold",
+              marginBottom: "8px",
+            }}
+          >
+            DN
+          </div>
+          <div style={{ fontSize: "13px" }}>Iniciando DevNest...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
@@ -31,10 +71,10 @@ export default function App(): React.JSX.Element {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route index element={<PlaceholderPage title="Dashboard" />} />
-          <Route path="/proyectos" element={<PlaceholderPage title="Proyectos" />} />
-          <Route path="/board" element={<PlaceholderPage title="Board" />} />
-          <Route path="/backlog" element={<PlaceholderPage title="Backlog" />} />
-          <Route path="/sprints" element={<PlaceholderPage title="Sprints" />} />
+          <Route path="/proyectos" element={<ProjectsPage />} />
+          <Route path="/board" element={<BoardPage />} />
+          <Route path="/backlog" element={<BacklogPage />} />
+          <Route path="/sprints" element={<SprintsPage />} />
           <Route path="/chat" element={<PlaceholderPage title="Chat" />} />
           <Route path="/reportes" element={<PlaceholderPage title="Reportes" />} />
         </Route>

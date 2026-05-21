@@ -5,13 +5,16 @@ import { useAuth } from "../../hooks/useAuth";
 export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loading, error, clearError } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { login, error, clearError } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setSubmitting(true);
     await login(email, password);
+    setSubmitting(false);
     if (!error) navigate("/");
   };
 
@@ -138,21 +141,21 @@ export default function LoginPage(): React.JSX.Element {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={submitting}
             style={{
               width: "100%",
               padding: "10px",
-              background: loading ? "var(--accent-hover)" : "var(--accent)",
+              background: submitting ? "var(--accent-hover)" : "var(--accent)",
               color: "#fff",
               border: "none",
               borderRadius: "var(--radius-md)",
               fontSize: "14px",
               fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
+              cursor: submitting ? "not-allowed" : "pointer",
+              opacity: submitting ? 0.7 : 1,
             }}
           >
-            {loading ? "Iniciando..." : "Iniciar sesión"}
+            {submitting ? "Iniciando..." : "Iniciar sesión"}
           </button>
         </form>
 
