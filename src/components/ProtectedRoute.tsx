@@ -1,8 +1,8 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthStore } from "../store/authStore";
 
 export default function ProtectedRoute(): React.JSX.Element {
-  const { isAuthenticated, loading } = useAuth();
+  const { session, loading } = useAuthStore();
 
   if (loading) {
     return (
@@ -14,7 +14,6 @@ export default function ProtectedRoute(): React.JSX.Element {
           height: "100vh",
           background: "var(--bg-base)",
           color: "var(--text-secondary)",
-          fontSize: "14px",
         }}
       >
         Cargando...
@@ -22,9 +21,5 @@ export default function ProtectedRoute(): React.JSX.Element {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Outlet />;
+  return session ? <Outlet /> : <Navigate to="/login" replace />;
 }

@@ -23,7 +23,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   loading: false,
@@ -89,7 +89,22 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   clearError: () => set({ error: null }),
   setUser: (user) => set({ user }),
-  setSession: (session) => set({ session }),
+  setSession: async (session) => {
+    set({ session });
+    if (session?.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+      if (profile) {
+        set({ user: profile as AppUser });
+      }
+    } else {
+      set({ user: null });
+    }
+    set({ loading: false });
+  },
   setLoading: (loading) => set({ loading }),
 }));
 
