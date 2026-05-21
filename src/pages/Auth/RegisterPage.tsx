@@ -9,6 +9,7 @@ export default function RegisterPage(): React.JSX.Element {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"coordinator" | "intern">("intern");
   const [passwordError, setPasswordError] = useState("");
+  const [success, setSuccess] = useState(false);
   const { register, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
@@ -16,6 +17,7 @@ export default function RegisterPage(): React.JSX.Element {
     e.preventDefault();
     clearError();
     setPasswordError("");
+    setSuccess(false);
 
     if (password !== confirmPassword) {
       setPasswordError("Las contraseñas no coinciden");
@@ -23,8 +25,59 @@ export default function RegisterPage(): React.JSX.Element {
     }
 
     await register(email, password, name, role);
-    if (!error) navigate("/login");
+    if (!error) {
+      setSuccess(true);
+      setTimeout(() => navigate("/login"), 2000);
+    }
   };
+
+  if (success) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          background: "var(--bg-base)",
+        }}
+      >
+        <div
+          style={{
+            width: "400px",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "32px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: "64px",
+              height: "64px",
+              borderRadius: "50%",
+              background: "var(--success)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+              fontSize: "28px",
+              color: "#fff",
+            }}
+          >
+            ✓
+          </div>
+          <h2 style={{ fontSize: "18px", color: "var(--text-primary)", marginBottom: "8px" }}>
+            ¡Cuenta creada!
+          </h2>
+          <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+            Redirigiendo al login...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -45,7 +98,6 @@ export default function RegisterPage(): React.JSX.Element {
           padding: "32px",
         }}
       >
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div
             style={{
@@ -72,7 +124,6 @@ export default function RegisterPage(): React.JSX.Element {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: "16px" }}>
             <label

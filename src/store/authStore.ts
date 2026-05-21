@@ -42,7 +42,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .from("profiles")
         .select("*")
         .eq("id", data.user.id)
-        .single();
+        .maybeSingle();
+
+      if (!profile) {
+        throw new Error("Perfil no encontrado. Contactá al administrador.");
+      }
 
       set({
         user: profile as AppUser,
@@ -96,9 +100,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
-        .single();
+        .maybeSingle();
       if (profile) {
         set({ user: profile as AppUser });
+      } else {
+        set({ user: null, error: "Perfil no encontrado" });
       }
     } else {
       set({ user: null });
