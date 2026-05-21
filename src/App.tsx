@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { NavLink, Routes, Route } from "react-router-dom";
+import { NavLink, Routes, Route, Outlet } from "react-router-dom";
+import { supabase } from "./services/supabase";
+import { useAuthStore } from "./store/authStore";
+import { useAuth } from "./hooks/useAuth";
+import LoginPage from "./pages/Auth/LoginPage";
+import RegisterPage from "./pages/Auth/RegisterPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import type { AppUser } from "./types/entities";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: "\u229E" },
@@ -35,7 +42,31 @@ function PagePlaceholder({ name }: { name: string }): React.JSX.Element {
   );
 }
 
-function App(): React.JSX.Element {
+function AppShell(): React.JSX.Element {
+  const { user, logout } = useAuth();
+  const [title, setTitle] = useState("Dashboard");
+
+  useEffect(() => {
+    const path = window.location.hash.replace("#", "") || "/";
+    setTitle(pageTitles[path] || "DevNest");
+
+    const handler = () => {
+      const p = window.location.hash.replace("#", "") || "/";
+      setTitle(pageTitles[p] || "DevNest");
+    };
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
+
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??";
+
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
       {/* SIDEBAR */}
@@ -207,14 +238,38 @@ function App(): React.JSX.Element {
               flexShrink: 0,
             }}
           >
-            CO
+            {initials}
           </div>
-          <div style={{ overflow: "hidden" }}>
-            <p style={{ fontWeight: 600, fontSize: "13px", color: "var(--text-primary)" }}>
-              Coordinador
+          <div style={{ overflow: "hidden", flex: 1 }}>
+            <p
+              style={{
+                fontWeight: 600,
+                fontSize: "13px",
+                color: "var(--text-primary)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {user?.name || "Usuario"}
             </p>
-            <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>coordinator</p>
+            <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>{user?.role}</p>
           </div>
+          <button
+            onClick={logout}
+            title="Cerrar sesión"
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-muted)",
+              cursor: "pointer",
+              fontSize: "16px",
+              padding: "4px",
+              lineHeight: 1,
+            }}
+          >
+            &#x23FB;
+          </button>
         </div>
       </aside>
 
@@ -232,7 +287,7 @@ function App(): React.JSX.Element {
             flexShrink: 0,
           }}
         >
-          <PageTitle />
+          <span style={{ fontWeight: 600, fontSize: "14px" }}>{title}</span>
           <div
             style={{
               display: "flex",
@@ -257,37 +312,72 @@ function App(): React.JSX.Element {
             overflowY: "auto",
           }}
         >
-          <Routes>
-            <Route path="/" element={<PagePlaceholder name="Dashboard" />} />
-            <Route path="/proyectos" element={<PagePlaceholder name="Proyectos" />} />
-            <Route path="/board" element={<PagePlaceholder name="Board" />} />
-            <Route path="/backlog" element={<PagePlaceholder name="Backlog" />} />
-            <Route path="/sprints" element={<PagePlaceholder name="Sprints" />} />
-            <Route path="/chat" element={<PagePlaceholder name="Chat" />} />
-            <Route path="/reportes" element={<PagePlaceholder name="Reportes" />} />
-          </Routes>
+          <Outlet />
         </main>
       </div>
     </div>
   );
 }
 
-function PageTitle(): React.JSX.Element {
-  const [title, setTitle] = useState("Dashboard");
+function App(): React.JSX.Element {
+  const { setUser, setSession, setLoading } = useAuthStore();
 
   useEffect(() => {
-    const path = window.location.hash.replace("#", "") || "/";
-    setTitle(pageTitles[path] || "DevNest");
+    async function initSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setSession(session);
 
-    const handler = () => {
-      const p = window.location.hash.replace("#", "") || "/";
-      setTitle(pageTitles[p] || "DevNest");
-    };
-    window.addEventListener("hashchange", handler);
-    return () => window.removeEventListener("hashchange", handler);
-  }, []);
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        setUser(profile as AppUser);
+      }
+      setLoading(false);
+    }
 
-  return <span style={{ fontWeight: 600, fontSize: "14px" }}>{title}</span>;
+    initSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        setUser(profile as AppUser);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser, setSession, setLoading]);
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<PagePlaceholder name="Dashboard" />} />
+          <Route path="/proyectos" element={<PagePlaceholder name="Proyectos" />} />
+          <Route path="/board" element={<PagePlaceholder name="Board" />} />
+          <Route path="/backlog" element={<PagePlaceholder name="Backlog" />} />
+          <Route path="/sprints" element={<PagePlaceholder name="Sprints" />} />
+          <Route path="/chat" element={<PagePlaceholder name="Chat" />} />
+          <Route path="/reportes" element={<PagePlaceholder name="Reportes" />} />
+        </Route>
+      </Route>
+    </Routes>
+  );
 }
 
 export default App;
