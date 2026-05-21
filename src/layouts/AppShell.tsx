@@ -8,6 +8,7 @@ const navItems = [
   { path: "/board", label: "Board", icon: "\u25A6" },
   { path: "/backlog", label: "Backlog", icon: "\u2630" },
   { path: "/sprints", label: "Sprints", icon: "\u25CE" },
+  { path: "/github", label: "GitHub", icon: "\uF09B" },
 ];
 
 const commItems = [
@@ -23,6 +24,7 @@ const pageTitles: Record<string, string> = {
   "/sprints": "Sprints",
   "/chat": "Chat",
   "/reportes": "Reportes",
+  "/github": "GitHub",
 };
 
 export default function AppShell(): React.JSX.Element {

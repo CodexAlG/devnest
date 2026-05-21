@@ -86,3 +86,50 @@ export interface Message {
   edited_at?: string | null;
   sender?: AppUser;
 }
+
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  description?: string;
+  html_url: string;
+  private: boolean;
+  default_branch: string;
+  updated_at: string;
+}
+
+export interface GitHubPR {
+  id: number;
+  number: number;
+  title: string;
+  state: "open" | "closed" | "merged";
+  html_url: string;
+  user: { login: string; avatar_url: string };
+  created_at: string;
+  updated_at: string;
+  merged_at?: string | null;
+  head: { ref: string };
+  base: { ref: string };
+}
+
+export interface GitHubCommit {
+  sha: string;
+  commit: {
+    message: string;
+    author: { name: string; date: string };
+  };
+  html_url: string;
+  author?: { login: string; avatar_url: string } | null;
+}
+
+export interface GitHubIssue {
+  id: number;
+  number: number;
+  title: string;
+  body?: string;
+  state: "open" | "closed";
+  html_url: string;
+  user: { login: string };
+  created_at: string;
+  labels: { name: string; color: string }[];
+}

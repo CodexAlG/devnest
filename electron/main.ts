@@ -25,11 +25,15 @@ function createWindow(): BrowserWindow {
         ...details.responseHeaders,
         "Content-Security-Policy": [
           "default-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co " +
-          "https://*.supabase.in wss://*.supabase.in " +
-          "https://api.anthropic.com ws://localhost:* wss://localhost:*; " +
+          "connect-src 'self' " +
+            "https://*.supabase.co wss://*.supabase.co " +
+            "https://*.supabase.in wss://*.supabase.in " +
+            "https://api.github.com https://github.com " +
+            "https://api.anthropic.com " +
+            "ws://localhost:* wss://localhost:*; " +
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-          "style-src 'self' 'unsafe-inline';",
+          "style-src 'self' 'unsafe-inline'; " +
+          "img-src 'self' data: https://avatars.githubusercontent.com https://*.githubusercontent.com;",
         ],
       },
     });

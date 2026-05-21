@@ -12,6 +12,7 @@ import BoardPage from "./pages/Board/BoardPage";
 import BacklogPage from "./pages/Backlog/BacklogPage";
 import SprintsPage from "./pages/Sprints/SprintsPage";
 import ChatPage from "./pages/Chat/ChatPage";
+import ProjectGitHub from "./pages/Projects/ProjectGitHub";
 
 export default function App(): React.JSX.Element {
   const { setSession } = useAuthStore();
@@ -78,6 +79,7 @@ export default function App(): React.JSX.Element {
           <Route path="/sprints" element={<SprintsPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/reportes" element={<PlaceholderPage title="Reportes" />} />
+          <Route path="/github" element={<ProjectGitHub />} />
         </Route>
       </Route>
 
