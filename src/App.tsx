@@ -1,47 +1,46 @@
-import { Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import { supabase } from "./services/supabase";
+import { useAuthStore } from "./store/authStore";
+import AppShell from "./layouts/AppShell";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginPage from "./pages/Auth/LoginPage";
+import RegisterPage from "./pages/Auth/RegisterPage";
+import PlaceholderPage from "./pages/PlaceholderPage";
 
 export default function App(): React.JSX.Element {
-  const [ready, setReady] = useState(false);
+  const { setSession } = useAuthStore();
 
   useEffect(() => {
-    supabase.auth.getSession().then(() => setReady(true));
-  }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-  if (!ready) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          background: "#1E1E2E",
-          color: "#7C6AF7",
-          fontSize: "18px",
-          fontFamily: "sans-serif",
-        }}
-      >
-        DevNest — Conectando...
-      </div>
-    );
-  }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+
+    return () => subscription.unsubscribe();
+  }, [setSession]);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        background: "#1E1E2E",
-        color: "#E0E0FF",
-        fontSize: "18px",
-        fontFamily: "sans-serif",
-      }}
-    >
-      ✅ App cargada correctamente — Supabase conectado
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route index element={<PlaceholderPage title="Dashboard" />} />
+          <Route path="/proyectos" element={<PlaceholderPage title="Proyectos" />} />
+          <Route path="/board" element={<PlaceholderPage title="Board" />} />
+          <Route path="/backlog" element={<PlaceholderPage title="Backlog" />} />
+          <Route path="/sprints" element={<PlaceholderPage title="Sprints" />} />
+          <Route path="/chat" element={<PlaceholderPage title="Chat" />} />
+          <Route path="/reportes" element={<PlaceholderPage title="Reportes" />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }
