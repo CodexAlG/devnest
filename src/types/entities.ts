@@ -87,6 +87,15 @@ export interface Message {
   sender?: AppUser;
 }
 
+export interface BoardColumn {
+  id: string;
+  project_id: string;
+  status_key: string;
+  label: string;
+  position: number;
+  created_at: string;
+}
+
 export interface GitHubRepo {
   id: number;
   name: string;

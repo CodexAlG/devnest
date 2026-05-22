@@ -112,6 +112,7 @@ CREATE POLICY "Miembros ven miembros de su proyecto"
   ON project_members FOR SELECT
   USING (
     user_id = auth.uid()
+    OR public.is_project_member(project_id)
     OR public.is_project_coordinator(project_id)
     OR public.is_coordinator()
     OR public.is_admin()

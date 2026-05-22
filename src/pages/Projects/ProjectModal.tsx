@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../../services/supabase";
 import { useProjectStore } from "../../store/projectStore";
+import type { AppUser, ProjectMember } from "../../types/entities";
 
 interface ProjectModalProps {
   project?: {
@@ -17,7 +19,54 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps): R
   const [description, setDescription] = useState(project?.description || "");
   const [github_repo_url, setGithubUrl] = useState(project?.github_repo_url || "");
   const [status, setStatus] = useState(project?.status || "active");
+  const [members, setMembers] = useState<(ProjectMember & { profile?: AppUser })[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<AppUser[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
   const { createProject, updateProject, loading } = useProjectStore();
+
+  useEffect(() => {
+    if (project) {
+      fetchMembers();
+    }
+    fetchAvailableUsers();
+  }, []);
+
+  const fetchMembers = async () => {
+    if (!project) return;
+    const { data } = await supabase
+      .from("project_members")
+      .select("*, profile:profiles(*)")
+      .eq("project_id", project.id);
+    if (data) setMembers(data);
+  };
+
+  const fetchAvailableUsers = async () => {
+    const { data } = await supabase.from("profiles").select("*");
+    if (data) setAvailableUsers(data);
+  };
+
+  const addMember = async () => {
+    if (!project || !selectedUserId) return;
+    const { error } = await supabase.from("project_members").insert({
+      project_id: project.id,
+      user_id: selectedUserId,
+      role_in_project: "member",
+    });
+    if (!error) {
+      setSelectedUserId("");
+      fetchMembers();
+    }
+  };
+
+  const removeMember = async (userId: string) => {
+    if (!project) return;
+    await supabase
+      .from("project_members")
+      .delete()
+      .eq("project_id", project.id)
+      .eq("user_id", userId);
+    fetchMembers();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +79,10 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps): R
     }
     onClose();
   };
+
+  const nonMemberUsers = availableUsers.filter(
+    (u) => !members.some((m) => m.user_id === u.id)
+  );
 
   return (
     <div
@@ -46,7 +99,9 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps): R
     >
       <div
         style={{
-          width: "480px",
+          width: "520px",
+          maxHeight: "90vh",
+          overflowY: "auto",
           background: "var(--bg-surface)",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius-lg)",
@@ -102,6 +157,87 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps): R
                 <option value="completed">Completado</option>
                 <option value="archived">Archivado</option>
               </select>
+            </div>
+          )}
+
+          {project && (
+            <div style={{ marginBottom: "20px", borderTop: "1px solid var(--border)", paddingTop: "16px" }}>
+              <label style={{ ...labelStyle, marginBottom: "12px" }}>Miembros</label>
+
+              {members.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+                  {members.map((m) => (
+                    <div
+                      key={m.user_id}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        background: "var(--bg-base)", padding: "8px 12px",
+                        borderRadius: "var(--radius-md)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div
+                          style={{
+                            width: "28px", height: "28px", borderRadius: "50%",
+                            background: "var(--accent)", display: "flex", alignItems: "center",
+                            justifyContent: "center", fontSize: "11px", fontWeight: 700, color: "#fff",
+                          }}
+                        >
+                          {m.profile?.name?.charAt(0) || "?"}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "13px", color: "var(--text-primary)" }}>
+                            {m.profile?.name || "Usuario"}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                            {m.role_in_project === "lead" ? "Coordinador" : "Miembro"}
+                          </div>
+                        </div>
+                      </div>
+                      {m.role_in_project !== "lead" && (
+                        <button
+                          type="button"
+                          onClick={() => removeMember(m.user_id)}
+                          style={{
+                            background: "transparent", border: "none",
+                            color: "var(--text-muted)", cursor: "pointer", fontSize: "12px",
+                            padding: "4px 8px", borderRadius: "var(--radius-sm)",
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = "var(--danger)"}
+                          onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
+                        >
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  style={{ ...inputStyle, flex: 1 }}
+                >
+                  <option value="">Agregar miembro...</option>
+                  {nonMemberUsers.map((u) => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={addMember}
+                  disabled={!selectedUserId}
+                  style={{
+                    padding: "10px 16px", background: selectedUserId ? "var(--accent)" : "var(--bg-base)",
+                    border: "none", borderRadius: "var(--radius-md)", color: "#fff",
+                    cursor: selectedUserId ? "pointer" : "not-allowed", fontWeight: 600, opacity: selectedUserId ? 1 : 0.5,
+                  }}
+                >
+                  +
+                </button>
+              </div>
             </div>
           )}
 

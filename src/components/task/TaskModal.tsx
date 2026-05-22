@@ -10,9 +10,15 @@ interface TaskModalProps {
 }
 
 export default function TaskModal({ task, onClose, projectId }: TaskModalProps): React.JSX.Element {
-  const { members, sprints, createTask, updateTask, deleteTask, loading } = useProjectStore();
+  const { members, sprints, createTask, updateTask, deleteTask, loading, fetchMembers } = useProjectStore();
   const { isCoordinator, isAdmin } = useAuth();
   const canDelete = isCoordinator || isAdmin;
+
+  useEffect(() => {
+    if (members.length === 0) {
+      fetchMembers(projectId);
+    }
+  }, [projectId, members.length, fetchMembers]);
 
   const [title, setTitle] = useState(task?.title || "");
   const [description, setDescription] = useState(task?.description || "");

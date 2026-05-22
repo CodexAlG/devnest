@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProjectStore } from "../../store/projectStore";
 import TaskModal from "../../components/task/TaskModal";
 import type { Task, TaskPriority } from "../../types/entities";
@@ -13,10 +13,18 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function BacklogPage(): React.JSX.Element {
-  const { activeProject, tasks, updateTask, sprints } = useProjectStore();
+  const { activeProject, tasks, updateTask, sprints, fetchTasks, fetchSprints, fetchBoardColumns } = useProjectStore();
   const [showModal, setShowModal] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
+
+  useEffect(() => {
+    if (activeProject && tasks.length === 0) {
+      fetchTasks(activeProject.id);
+      fetchSprints(activeProject.id);
+      fetchBoardColumns(activeProject.id);
+    }
+  }, [activeProject?.id]);
 
   if (!activeProject) {
     return (

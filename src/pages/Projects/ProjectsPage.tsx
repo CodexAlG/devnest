@@ -13,17 +13,20 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ProjectsPage(): React.JSX.Element {
-  const { projects, fetchProjects, loading } = useProjectStore();
+  const { projects, fetchProjects, loading, deleteProject } = useProjectStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
   }, []);
 
   const canCreate = user?.role === "coordinator" || user?.role === "admin";
+  const canManage = (project: Project) =>
+    user?.role === "admin" || user?.id === project.coordinator_id;
 
   const handleOpen = (project: Project) => {
     useProjectStore.getState().setActiveProject(project);
@@ -96,18 +99,58 @@ export default function ProjectsPage(): React.JSX.Element {
                 <h3 style={{ fontSize: "16px", color: "var(--text-primary)", fontWeight: 600 }}>
                   {project.name}
                 </h3>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    padding: "2px 8px",
-                    borderRadius: "var(--radius-sm)",
-                    background: statusColors[project.status] + "20",
-                    color: statusColors[project.status],
-                    fontWeight: 600,
-                  }}
-                >
-                  {project.status}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  {canManage(project) && (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditingProject(project); setShowModal(true); }}
+                        title="Editar"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          padding: "2px 6px",
+                          borderRadius: "var(--radius-sm)",
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeletingId(project.id); }}
+                        title="Eliminar"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          padding: "2px 6px",
+                          borderRadius: "var(--radius-sm)",
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--danger)"}
+                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
+                      >
+                        ✕
+                      </button>
+                    </>
+                  )}
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      padding: "2px 8px",
+                      borderRadius: "var(--radius-sm)",
+                      background: statusColors[project.status] + "20",
+                      color: statusColors[project.status],
+                      fontWeight: 600,
+                    }}
+                  >
+                    {project.status}
+                  </span>
+                </div>
               </div>
 
               {project.description && (
@@ -138,6 +181,53 @@ export default function ProjectsPage(): React.JSX.Element {
           project={editingProject}
           onClose={() => { setShowModal(false); setEditingProject(null); }}
         />
+      )}
+
+      {deletingId && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+          }}
+          onClick={() => setDeletingId(null)}
+        >
+          <div
+            style={{
+              width: "360px", background: "var(--bg-surface)", border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)", padding: "24px", textAlign: "center",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>🗑</div>
+            <h3 style={{ color: "var(--text-primary)", marginBottom: "8px" }}>Eliminar proyecto</h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginBottom: "24px" }}>
+              ¿Estás seguro? Se eliminarán todas las tareas, sprints y datos asociados.
+            </p>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+              <button
+                onClick={() => setDeletingId(null)}
+                style={{
+                  padding: "10px 20px", background: "transparent", border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-md)", color: "var(--text-secondary)", cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  await deleteProject(deletingId);
+                  setDeletingId(null);
+                }}
+                style={{
+                  padding: "10px 20px", background: "var(--danger)", border: "none",
+                  borderRadius: "var(--radius-md)", color: "#fff", cursor: "pointer", fontWeight: 600,
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
