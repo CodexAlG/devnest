@@ -1,12 +1,39 @@
 {
   "name": "devnest",
-  "version": "0.1.0",
+  "version": "1.0.0-beta",
   "description": "DevNest - Desktop IDE",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "tsc -p tsconfig.node.json && vite build",
+    "dist": "tsc -p tsconfig.node.json && vite build && electron-builder --win",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.devnest.app",
+    "productName": "DevNest",
+    "artifactName": "DevNest v${version}.${ext}",
+    "directories": {
+      "output": "dist-release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["portable"],
+      "icon": null
+    },
+    "portable": {
+      "artifactName": "DevNest v${version}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "DevNest v${version}-setup.exe"
+    }
   },
   "devDependencies": {
     "@types/react": "^19.2.15",
@@ -14,6 +41,8 @@
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^9.1.0",
     "electron": "^31.7.0",
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "wait-on": "^8.0.1"
