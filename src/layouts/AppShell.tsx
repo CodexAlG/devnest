@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import Logo from "../components/Logo";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: "\u229E" },
@@ -79,23 +80,8 @@ export default function AppShell(): React.JSX.Element {
             borderBottom: "1px solid var(--border)",
           }}
         >
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "var(--radius-md)",
-              background: "var(--accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              fontSize: "14px",
-              color: "#fff",
-            }}
-          >
-            DN
-          </div>
-          <span style={{ fontWeight: 700, fontSize: "16px", color: "var(--accent)" }}>
+          <Logo size={32} />
+          <span style={{ fontWeight: 700, fontSize: "16px", color: "var(--text-primary)" }}>
             DevNest
           </span>
         </div>

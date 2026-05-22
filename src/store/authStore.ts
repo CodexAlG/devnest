@@ -19,7 +19,7 @@ interface AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   setUser: (user: AppUser | null) => void;
-  setSession: (session: Session | null) => void;
+  setSession: (session: Session | null) => Promise<void>;
   setLoading: (loading: boolean) => void;
 }
 

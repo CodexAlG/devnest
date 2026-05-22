@@ -1,20 +1,20 @@
 :root {
   /* Backgrounds */
-  --bg-base:      #1E1E2E;
-  --bg-sidebar:   #16161F;
-  --bg-surface:   #252535;
-  --bg-hover:     #2E2E42;
-  --bg-active:    #313150;
+  --bg-base:      #1A1F2B;
+  --bg-sidebar:   #151920;
+  --bg-surface:   #222738;
+  --bg-hover:     #2A2F40;
+  --bg-active:    #2E3348;
 
   /* Accent */
-  --accent:       #7C6AF7;
-  --accent-hover: #6A58E0;
-  --accent-soft:  #7C6AF720;
+  --accent:       #5B9CF6;
+  --accent-hover: #4A7DE0;
+  --accent-soft:  #5B9CF620;
 
   /* Text */
-  --text-primary:   #E0E0FF;
-  --text-secondary: #9090B0;
-  --text-muted:     #5A5A7A;
+  --text-primary:   #FFFFFF;
+  --text-secondary: #B0B8C8;
+  --text-muted:     #6B7280;
 
   /* Status */
   --success: #2DBDA8;
@@ -23,8 +23,8 @@
   --info:    #5B9CF6;
 
   /* Borders */
-  --border:       #2E2E45;
-  --border-light: #3A3A55;
+  --border:       #2E3348;
+  --border-light: #383D50;
 
   /* Spacing */
   --sidebar-width: 220px;

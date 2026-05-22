@@ -9,8 +9,9 @@ function createWindow(): BrowserWindow {
     height: 800,
     minWidth: 960,
     minHeight: 600,
-    backgroundColor: "#1E1E2E",
+    backgroundColor: "#1A1F2B",
     show: false,
+    icon: join(__dirname, "../public/images/logodevnest.png"),
     webPreferences: {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -38,27 +39,6 @@ app.whenReady().then(() => {
   session.defaultSession.webRequest.onBeforeSendHeaders(
     (details, callback) => {
       callback({ requestHeaders: details.requestHeaders })
-    }
-  )
-
-  session.defaultSession.webRequest.onHeadersReceived(
-    (details, callback) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Access-Control-Allow-Origin': ['*'],
-          'Content-Security-Policy': [
-            [
-              "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "connect-src *",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src * data: blob:",
-              "font-src 'self' data:"
-            ].join('; ')
-          ]
-        }
-      })
     }
   )
 

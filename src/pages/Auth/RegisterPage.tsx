@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
+import Logo from "../../components/Logo";
 
 export default function RegisterPage(): React.JSX.Element {
   const [name, setName] = useState("");
@@ -124,23 +125,7 @@ export default function RegisterPage(): React.JSX.Element {
         }}
       >
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "var(--radius-md)",
-              background: "var(--accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              fontSize: "18px",
-              color: "#fff",
-              margin: "0 auto 12px",
-            }}
-          >
-            DN
-          </div>
+          <Logo size={48} style={{ margin: "0 auto 12px" }} />
           <h1 style={{ fontSize: "20px", color: "var(--text-primary)", fontWeight: 700 }}>
             Crear cuenta
           </h1>

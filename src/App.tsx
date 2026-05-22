@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./services/supabase";
 import { useAuthStore } from "./store/authStore";
+import Logo from "./components/Logo";
 import AppShell from "./layouts/AppShell";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/Auth/LoginPage";
@@ -65,16 +66,7 @@ export default function App(): React.JSX.Element {
         }}
       >
         <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: "24px",
-              color: "var(--accent)",
-              fontWeight: "bold",
-              marginBottom: "8px",
-            }}
-          >
-            DN
-          </div>
+          <Logo size={48} style={{ margin: "0 auto 12px" }} />
           <div style={{ fontSize: "13px" }}>Iniciando DevNest...</div>
         </div>
       </div>
