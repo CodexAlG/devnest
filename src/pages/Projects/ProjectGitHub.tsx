@@ -175,7 +175,7 @@ export default function ProjectGitHub(): React.JSX.Element {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: "14px", fontWeight: 500 }}>{pr.title}</div>
                         <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                          #{pr.number} • {pr.user.login} • {pr.head.ref} → {pr.base.ref}
+                          #{pr.number} • {pr.user?.login ?? 'unknown'} • {pr.head.ref} → {pr.base.ref}
                         </div>
                       </div>
                       <span style={{

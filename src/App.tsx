@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./services/supabase";
 import { useAuthStore } from "./store/authStore";
 import AppShell from "./layouts/AppShell";
@@ -17,23 +17,39 @@ import ProjectGitHub from "./pages/Projects/ProjectGitHub";
 export default function App(): React.JSX.Element {
   const { setSession } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
+  const initRef = useRef(false);
 
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
+    let subscription: { unsubscribe: () => void } | null = null;
+
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
-        setSession(session);
-      })
-      .finally(() => setInitializing(false));
+        setSession(session).finally(() => setInitializing(false));
+      });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    const { data } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('[AUTH EVENT]', event);
 
-    return () => subscription.unsubscribe();
-  }, [setSession]);
+        if (
+          event === 'SIGNED_IN' ||
+          event === 'SIGNED_OUT' ||
+          event === 'USER_UPDATED'
+        ) {
+          await setSession(session);
+        }
+      }
+    );
+    subscription = data.subscription;
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   if (initializing) {
     return (

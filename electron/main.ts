@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, session } from "electron";
 import { join } from "path";
 
 const isDev = !app.isPackaged;
@@ -16,27 +16,8 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: false,
+      allowRunningInsecureContent: true,
     },
-  });
-
-  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        "Content-Security-Policy": [
-          "default-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-          "connect-src 'self' " +
-            "https://*.supabase.co wss://*.supabase.co " +
-            "https://*.supabase.in wss://*.supabase.in " +
-            "https://api.github.com https://github.com " +
-            "https://api.anthropic.com " +
-            "ws://localhost:* wss://localhost:*; " +
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-          "style-src 'self' 'unsafe-inline'; " +
-          "img-src 'self' data: https://avatars.githubusercontent.com https://*.githubusercontent.com;",
-        ],
-      },
-    });
   });
 
   if (isDev) {
@@ -54,6 +35,33 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    (details, callback) => {
+      callback({ requestHeaders: details.requestHeaders })
+    }
+  )
+
+  session.defaultSession.webRequest.onHeadersReceived(
+    (details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Access-Control-Allow-Origin': ['*'],
+          'Content-Security-Policy': [
+            [
+              "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "connect-src *",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src * data: blob:",
+              "font-src 'self' data:"
+            ].join('; ')
+          ]
+        }
+      })
+    }
+  )
+
   const mainWindow = createWindow();
 
   ipcMain.handle("get-version", () => app.getVersion());

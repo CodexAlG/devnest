@@ -15,7 +15,7 @@ interface AuthState {
     password: string,
     name: string,
     role: "coordinator" | "intern"
-  ) => Promise<void>;
+  ) => Promise<{ success: boolean; emailConfirmationRequired?: boolean } | void>;
   logout: () => Promise<void>;
   clearError: () => void;
   setUser: (user: AppUser | null) => void;
@@ -39,6 +39,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.log("[AUTH] Resultado:", result);
 
       if (result.error) {
+        if (result.error.message.includes('Email not confirmed') || 
+            result.error.message.includes('email_not_confirmed')) {
+          set({ 
+            loading: false, 
+            error: 'Debes confirmar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.' 
+          });
+          return;
+        }
         set({ loading: false, error: result.error.message });
         return;
       }
@@ -68,20 +76,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   ) => {
     set({ loading: true, error: null });
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { name, role },
         },
       });
-      if (error) throw error;
+
+      if (error) {
+        set({ loading: false, error: error.message });
+        return { success: false };
+      }
+
+      if (data.user && data.user.identities?.length === 0) {
+        set({ loading: false, error: 'Este correo ya está registrado' });
+        return { success: false };
+      }
+
       set({ loading: false });
+      return { success: true, emailConfirmationRequired: true };
+
     } catch (err) {
-      set({
-        error: err instanceof Error ? err.message : "Error al registrarse",
-        loading: false,
-      });
+      set({ loading: false, error: String(err) });
+      return { success: false };
     }
   },
 
@@ -95,6 +113,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setSession: async (session: Session | null): Promise<void> => {
     if (!session) {
       set({ session: null, user: null, loading: false });
+      return;
+    }
+
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser?.id === session.user.id) {
+      set({ session });
       return;
     }
 

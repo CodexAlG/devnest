@@ -5,7 +5,12 @@ let octokitInstance: Octokit | null = null;
 
 export function getOctokit(token: string): Octokit {
   if (!octokitInstance) {
-    octokitInstance = new Octokit({ auth: token });
+    octokitInstance = new Octokit({ 
+      auth: token,
+      request: {
+        fetch: (url: string | URL | Request, init?: RequestInit) => window.fetch(url, init)
+      }
+    })
   }
   return octokitInstance;
 }

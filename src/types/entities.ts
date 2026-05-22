@@ -91,20 +91,20 @@ export interface GitHubRepo {
   id: number;
   name: string;
   full_name: string;
-  description?: string;
+  description?: string | null;
   html_url: string;
   private: boolean;
   default_branch: string;
-  updated_at: string;
+  updated_at: string | null;
 }
 
 export interface GitHubPR {
   id: number;
   number: number;
   title: string;
-  state: "open" | "closed" | "merged";
+  state: string;
   html_url: string;
-  user: { login: string; avatar_url: string };
+  user: { login: string; avatar_url: string } | null;
   created_at: string;
   updated_at: string;
   merged_at?: string | null;
@@ -116,20 +116,20 @@ export interface GitHubCommit {
   sha: string;
   commit: {
     message: string;
-    author: { name: string; date: string };
+    author: { name?: string | null; date?: string | null } | null;
   };
   html_url: string;
-  author?: { login: string; avatar_url: string } | null;
+  author?: { login: string; avatar_url: string } | Record<string, never> | null;
 }
 
 export interface GitHubIssue {
   id: number;
   number: number;
   title: string;
-  body?: string;
-  state: "open" | "closed";
+  body?: string | null;
+  state: string;
   html_url: string;
-  user: { login: string };
+  user: { login: string } | null;
   created_at: string;
-  labels: { name: string; color: string }[];
+  labels: unknown[];
 }
