@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useProjectStore } from "../store/projectStore";
+import { supabase } from "../services/supabase";
 import TaskModal from "../components/task/TaskModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { Task, Sprint } from "../types/entities";
 
 const statusLabels: Record<string, string> = {
   backlog: "Backlog", todo: "To Do", in_progress: "In Progress",
@@ -16,17 +18,44 @@ const priorityColors: Record<string, string> = {
 export default function TaskDetailPage(): React.JSX.Element {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
-  const { tasks, sprints } = useProjectStore();
+  const { tasks, sprints, fetchSprints } = useProjectStore();
   const [editing, setEditing] = useState(false);
+  const [fetched, setFetched] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const task = tasks.find((t) => t.id === taskId);
+  const task = tasks.find((t) => t.id === taskId) || fetched;
+
+  useEffect(() => {
+    if (task) return;
+    if (!taskId) return;
+    setLoading(true);
+    supabase
+      .from("tasks")
+      .select("*, assignee:profiles!tasks_assignee_id_fkey(id, name, email, role), reporter:profiles!tasks_reporter_id_fkey(id, name, email, role)")
+      .eq("id", taskId)
+      .single()
+      .then((res: { data: any; error: any }) => {
+        if (res.data) {
+          setFetched(res.data as unknown as Task);
+          fetchSprints((res.data as any).project_id);
+        }
+        setLoading(false);
+      });
+  }, [taskId]);
+
   const sprint = sprints.find((s) => s.id === task?.sprint_id);
 
   if (!task) {
     return (
       <div style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)" }}>
-        <h2 style={{ color: "var(--text-primary)", marginBottom: "8px" }}>Tarea no encontrada</h2>
-        <button onClick={() => navigate(-1)} style={backBtnStyle}>Volver</button>
+        {loading ? (
+          <h2 style={{ color: "var(--text-primary)", marginBottom: "8px" }}>Cargando...</h2>
+        ) : (
+          <>
+            <h2 style={{ color: "var(--text-primary)", marginBottom: "8px" }}>Tarea no encontrada</h2>
+            <button onClick={() => navigate(-1)} style={backBtnStyle}>Volver</button>
+          </>
+        )}
       </div>
     );
   }

@@ -19,37 +19,46 @@ const statusColors: Record<string, string> = {
 
 const STATUSES = ["backlog", "todo", "in_progress", "review", "done", "blocked"];
 
-async function fetchTaskStats(userId?: string): Promise<TaskStats> {
-  const { count: total } = await supabase.from("tasks").select("*", { count: "exact", head: true });
-  const { count: done } = await supabase.from("tasks").select("*", { count: "exact", head: true }).eq("status", "done");
+async function fetchCoordinatorProjectIds(userId: string): Promise<string[]> {
+  const { data } = await supabase.from("projects").select("id").eq("coordinator_id", userId);
+  return (data || []).map((r: any) => r.id);
+}
+
+async function fetchMyProjectIds(userId: string): Promise<string[]> {
+  const { data } = await supabase.from("project_members").select("project_id").eq("user_id", userId);
+  return (data || []).map((r: any) => r.project_id);
+}
+
+async function fetchTaskStats(userId?: string, projectIds?: string[], scopedToUser?: boolean): Promise<TaskStats> {
+  let filter: (q: any) => any;
+  if (scopedToUser && userId) {
+    filter = (q: any) => q.eq("assignee_id", userId);
+  } else if (projectIds && projectIds.length > 0) {
+    filter = (q: any) => q.in("project_id", projectIds);
+  } else {
+    filter = (q: any) => q;
+  }
+
+  const { count: total } = await filter(supabase.from("tasks").select("*", { count: "exact", head: true }));
+  const { count: done } = await filter(supabase.from("tasks").select("*", { count: "exact", head: true }).eq("status", "done"));
 
   const statusCounts: { status: string; count: number }[] = [];
   for (const s of STATUSES) {
-    const { count } = await supabase.from("tasks").select("*", { count: "exact", head: true }).eq("status", s);
+    const { count } = await filter(supabase.from("tasks").select("*", { count: "exact", head: true }).eq("status", s));
     statusCounts.push({ status: s, count: count ?? 0 });
   }
 
-  let myTasks: { id: string; title: string; status: string }[] = [];
-  if (userId) {
-    const { data } = await supabase
-      .from("tasks")
-      .select("id, title, status")
-      .eq("assignee_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(10);
-    myTasks = (data as any[]) || [];
-  }
+  let qMy = supabase.from("tasks").select("id, title, status").eq("assignee_id", userId).order("created_at", { ascending: false }).limit(10) as any;
+  if (projectIds && projectIds.length > 0) qMy = qMy.in("project_id", projectIds);
+  const { data: myData } = await qMy;
 
-  return { total: total ?? 0, done: done ?? 0, byStatus: statusCounts, myTasks };
+  return { total: total ?? 0, done: done ?? 0, byStatus: statusCounts, myTasks: (myData as any[]) || [] };
 }
 
-async function fetchActiveSprintName(): Promise<string | null> {
-  const { data } = await supabase
-    .from("sprints")
-    .select("name")
-    .eq("status", "active")
-    .limit(1)
-    .single();
+async function fetchActiveSprintName(projectIds?: string[]): Promise<string | null> {
+  let q = supabase.from("sprints").select("name").eq("status", "active").limit(1);
+  if (projectIds && projectIds.length > 0) q = q.in("project_id", projectIds);
+  const { data } = await q.maybeSingle();
   return data?.name || null;
 }
 
@@ -62,9 +71,25 @@ export default function DashboardPage(): React.JSX.Element {
 
   useEffect(() => {
     fetchProjects();
-    fetchTaskStats(user?.id).then(setStats);
-    fetchActiveSprintName().then(setSprintName);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === "intern") {
+      fetchMyProjectIds(user.id).then((pids) => {
+        fetchTaskStats(user.id, pids, true).then(setStats);
+        fetchActiveSprintName(pids).then(setSprintName);
+      });
+    } else if (user.role === "coordinator") {
+      fetchCoordinatorProjectIds(user.id).then((pids) => {
+        fetchTaskStats(user.id, pids, false).then(setStats);
+        fetchActiveSprintName(pids).then(setSprintName);
+      });
+    } else {
+      fetchTaskStats(user.id, undefined, false).then(setStats);
+      fetchActiveSprintName().then(setSprintName);
+    }
+  }, [user?.id, user?.role]);
 
   const activeProjects = projects.filter((p) => p.status === "active").length;
   const maxCount = Math.max(...(stats?.byStatus.map((s) => s.count) || [1]), 1);

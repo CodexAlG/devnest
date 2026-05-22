@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import Logo from "../components/Logo";
 import MembersSidebar from "../components/MembersSidebar";
+import NotificationBell from "../components/NotificationBell";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: "\u229E" },
@@ -292,18 +293,31 @@ export default function AppShell(): React.JSX.Element {
           }}
         >
           <span style={{ fontWeight: 600, fontSize: "14px" }}>{title}</span>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "12px",
-              color: "var(--success)",
-              fontWeight: 500,
-            }}
-          >
-            <span style={{ fontSize: "10px" }}>&#9679;</span>
-            Conectado
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <NotificationBell />
+            <button
+              onClick={() => setMembersOpen((m) => !m)}
+              title={membersOpen ? "Cerrar miembros" : "Ver miembros"}
+              style={{
+                background: membersOpen ? "var(--bg-active)" : "transparent",
+                border: "none", cursor: "pointer", lineHeight: 1,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "4px", borderRadius: "var(--radius-md)",
+              }}
+              onMouseEnter={(e) => { if (!membersOpen) e.currentTarget.style.background = "var(--bg-hover)"; }}
+              onMouseLeave={(e) => { if (!membersOpen) e.currentTarget.style.background = "transparent"; }}
+            >
+              <img src="/images/grupo.png" alt="Miembros" style={{ width: "20px", height: "20px", display: "block" }} />
+            </button>
+            <div
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                fontSize: "12px", color: "var(--success)", fontWeight: 500,
+              }}
+            >
+              <span style={{ fontSize: "10px" }}>&#9679;</span>
+              Conectado
+            </div>
           </div>
         </header>
 
@@ -319,7 +333,7 @@ export default function AppShell(): React.JSX.Element {
         </main>
       </div>
 
-      <MembersSidebar open={membersOpen} onToggle={() => setMembersOpen((m) => !m)} />
+      <MembersSidebar open={membersOpen} />
     </div>
   );
 }

@@ -1,21 +1,43 @@
-import { useState } from "react";
-import { useProjectStore } from "../store/projectStore";
+import { useEffect, useState } from "react";
+import { supabase } from "../services/supabase";
 import { useAuthStore } from "../store/authStore";
 import { usePresence } from "../hooks/usePresence";
+import type { AppUser } from "../types/entities";
 
-export default function MembersSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  const { members, activeProject } = useProjectStore();
+import type { PostgrestResponse } from "@supabase/supabase-js";
+
+let cached: AppUser[] | null = null;
+
+function getAllUsers(): Promise<AppUser[]> {
+  if (cached) return Promise.resolve(cached);
+  return supabase.from("profiles").select("*").order("name").then(
+    (res: PostgrestResponse<AppUser>) => {
+      const result = (res.data as AppUser[]) || [];
+      cached = result;
+      return result;
+    }
+  );
+}
+
+export default function MembersSidebar({ open }: { open: boolean }) {
   const { user } = useAuthStore();
   const { onlineUsers } = usePresence();
-  const [tab, setTab] = useState<"online" | "offline">("online");
+  const [users, setUsers] = useState<AppUser[]>([]);
 
-  const displayMembers = activeProject ? members : [];
-  const allUsers = displayMembers.map((m) => m.profile).filter(Boolean);
+  useEffect(() => {
+    getAllUsers().then(setUsers);
+  }, []);
 
-  const online = allUsers.filter((p) => p && (onlineUsers.has(p.id) || p.id === user?.id));
-  const offline = allUsers.filter((p) => p && !onlineUsers.has(p.id) && p.id !== user?.id);
+  const online: AppUser[] = [];
+  const offline: AppUser[] = [];
 
-  const list = tab === "online" ? online : offline;
+  users.forEach((u) => {
+    if (u.id === user?.id || onlineUsers.has(u.id)) {
+      online.push(u);
+    } else {
+      offline.push(u);
+    }
+  });
 
   return (
     <>
@@ -32,99 +54,81 @@ export default function MembersSidebar({ open, onToggle }: { open: boolean; onTo
         >
           <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
             <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
-              {activeProject ? activeProject.name : "Miembros"}
+              Miembros — {users.length}
             </span>
           </div>
 
-          <div style={{ display: "flex", borderBottom: "1px solid var(--border)" }}>
-            <button
-              onClick={() => setTab("online")}
-              style={{
-                flex: 1, padding: "8px", fontSize: "11px", fontWeight: 600,
-                background: tab === "online" ? "var(--bg-active)" : "transparent",
-                border: "none", color: tab === "online" ? "var(--accent)" : "var(--text-muted)",
-                cursor: "pointer",
-              }}
-            >
-              En línea ({online.length})
-            </button>
-            <button
-              onClick={() => setTab("offline")}
-              style={{
-                flex: 1, padding: "8px", fontSize: "11px", fontWeight: 600,
-                background: tab === "offline" ? "var(--bg-active)" : "transparent",
-                border: "none", color: tab === "offline" ? "var(--accent)" : "var(--text-muted)",
-                cursor: "pointer",
-              }}
-            >
-              Desconectados ({offline.length})
-            </button>
-          </div>
-
           <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
-            {list.length === 0 ? (
+            {online.length > 0 && (
+              <>
+                <div style={{ padding: "8px 8px 4px", fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  En línea — {online.length}
+                </div>
+                {online.map((u) => (
+                  <MemberRow key={u.id} user={u} online currentUserId={user?.id} />
+                ))}
+              </>
+            )}
+
+            {offline.length > 0 && (
+              <>
+                <div style={{ padding: "12px 8px 4px", fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Desconectados — {offline.length}
+                </div>
+                {offline.map((u) => (
+                  <MemberRow key={u.id} user={u} online={false} currentUserId={user?.id} />
+                ))}
+              </>
+            )}
+
+            {users.length === 0 && (
               <div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--text-muted)" }}>
-                No hay miembros
+                Cargando...
               </div>
-            ) : (
-              list.map((p) =>
-                p ? (
-                  <div
-                    key={p.id}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "8px",
-                      padding: "8px", borderRadius: "var(--radius-md)",
-                    }}
-                  >
-                    <div style={{ position: "relative", flexShrink: 0 }}>
-                      <div
-                        style={{
-                          width: "28px", height: "28px", borderRadius: "50%",
-                          background: "var(--accent-soft)", color: "var(--accent)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: "10px", fontWeight: 700,
-                        }}
-                      >
-                        {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                      </div>
-                      <div
-                        style={{
-                          position: "absolute", bottom: "-1px", right: "-1px",
-                          width: "10px", height: "10px", borderRadius: "50%",
-                          background: tab === "online" || onlineUsers.has(p.id) ? "var(--success)" : "var(--text-muted)",
-                          border: "2px solid var(--bg-sidebar)",
-                        }}
-                      />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "12px", color: "var(--text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {p.name}
-                      </div>
-                      <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                        {p.role}
-                      </div>
-                    </div>
-                  </div>
-                ) : null
-              )
             )}
           </div>
         </aside>
       )}
-
-      <button
-        onClick={onToggle}
-        title={open ? "Cerrar miembros" : "Abrir miembros"}
-        style={{
-          position: "fixed", right: open ? "220px" : "0", top: "50%", transform: "translateY(-50%)",
-          background: "var(--bg-sidebar)", border: "1px solid var(--border)", borderRight: "none",
-          color: "var(--text-muted)", cursor: "pointer", padding: "8px 4px",
-          borderRadius: "var(--radius-md) 0 0 var(--radius-md)", fontSize: "12px", zIndex: 100,
-          transition: "right 0.15s",
-        }}
-      >
-        {open ? "\u25B6" : "\u25C0"}
-      </button>
     </>
+  );
+}
+
+function MemberRow({ user: u, online: isOnline, currentUserId }: { user: AppUser; online: boolean; currentUserId?: string }) {
+  return (
+    <div
+      style={{
+        display: "flex", alignItems: "center", gap: "8px",
+        padding: "6px 8px", borderRadius: "var(--radius-md)",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <div
+          style={{
+            width: "28px", height: "28px", borderRadius: "50%",
+            background: "var(--accent-soft)", color: "var(--accent)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "10px", fontWeight: 700,
+          }}
+        >
+          {u.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+        </div>
+        <div
+          style={{
+            position: "absolute", bottom: "0", right: "0",
+            width: "10px", height: "10px", borderRadius: "50%",
+            background: isOnline ? "var(--success)" : "var(--text-muted)",
+            border: "2px solid var(--bg-sidebar)",
+          }}
+        />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: "12px", color: "var(--text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {u.name}
+          {u.id === currentUserId && <span style={{ color: "var(--text-muted)", fontWeight: 400, marginLeft: "4px", fontSize: "10px" }}>(vos)</span>}
+        </div>
+      </div>
+    </div>
   );
 }
