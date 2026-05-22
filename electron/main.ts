@@ -42,6 +42,26 @@ app.whenReady().then(() => {
     }
   )
 
+  session.defaultSession.webRequest.onHeadersReceived(
+    (details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [
+            [
+              "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in https://api.github.com https://github.com https://api.anthropic.com ws://localhost:* wss://localhost:* http://localhost:*",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' data:"
+            ].join('; ')
+          ]
+        }
+      })
+    }
+  )
+
   const mainWindow = createWindow();
 
   ipcMain.handle("get-version", () => app.getVersion());
