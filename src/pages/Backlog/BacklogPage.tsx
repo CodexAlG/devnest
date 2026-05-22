@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useProjectStore } from "../../store/projectStore";
 import TaskModal from "../../components/task/TaskModal";
 import type { Task, TaskPriority } from "../../types/entities";
@@ -13,6 +14,7 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function BacklogPage(): React.JSX.Element {
+  const navigate = useNavigate();
   const { activeProject, tasks, updateTask, sprints, fetchTasks, fetchSprints, fetchBoardColumns } = useProjectStore();
   const [showModal, setShowModal] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string>("all");
@@ -114,7 +116,13 @@ export default function BacklogPage(): React.JSX.Element {
             </thead>
             <tbody>
               {backlogTasks.map((task) => (
-                <tr key={task.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <tr
+                  key={task.id}
+                  style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}
+                  onClick={() => navigate(`/backlog/task/${task.id}`)}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
                   <td style={tdStyle}>
                     <span style={{
                       fontSize: "11px",

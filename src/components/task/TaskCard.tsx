@@ -1,4 +1,5 @@
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useRef } from "react";
+import { useDraggable } from "@dnd-kit/core";
 import type { Task } from "../../types/entities";
 
 interface TaskCardProps {
@@ -18,17 +19,31 @@ export default function TaskCard({ task, onEdit }: TaskCardProps): React.JSX.Ele
     id: task.id,
   });
 
+  const pointerRef = useRef({ x: 0, y: 0, down: false });
+
   const style: React.CSSProperties = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : {};
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
       {...attributes}
+      onPointerDown={(e) => {
+        pointerRef.current = { x: e.clientX, y: e.clientY, down: true };
+        listeners?.onPointerDown?.(e);
+      }}
+      onPointerUp={(e) => {
+        listeners?.onPointerUp?.(e);
+        if (pointerRef.current.down) {
+          const dx = Math.abs(e.clientX - pointerRef.current.x);
+          const dy = Math.abs(e.clientY - pointerRef.current.y);
+          if (dx < 8 && dy < 8) {
+            onEdit(task);
+          }
+        }
+        pointerRef.current.down = false;
+      }}
       style={{
         background: "var(--bg-surface)",
         border: "1px solid var(--border)",
@@ -39,7 +54,6 @@ export default function TaskCard({ task, onEdit }: TaskCardProps): React.JSX.Ele
         boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
         ...style,
       }}
-      onClick={() => onEdit(task)}
       onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)")}
       onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.2)")}
     >

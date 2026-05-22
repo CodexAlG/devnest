@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DndContext, DragEndEvent, closestCorners } from "@dnd-kit/core";
 import { useDroppable } from "@dnd-kit/core";
 import { useProjectStore } from "../../store/projectStore";
@@ -91,6 +92,7 @@ function DroppableColumn({
 const ALL_STATUSES = ["todo", "in_progress", "review", "done", "blocked"] as const;
 
 export default function BoardPage(): React.JSX.Element {
+  const navigate = useNavigate();
   const {
     activeProject, tasks, sprints, members, boardColumns,
     updateTask, upsertBoardColumn, deleteBoardColumn, reorderBoardColumns,
@@ -262,7 +264,7 @@ export default function BoardPage(): React.JSX.Element {
                 id={col.status_key as TaskStatus}
                 label={col.label}
                 tasks={boardTasks.filter((t) => t.status === col.status_key)}
-                onEditTask={setEditingTask}
+                onEditTask={(task) => navigate(`/board/task/${task.id}`)}
                 onAddTask={(status) => { setEditingTask(null); setAddingStatus(status); }}
                 onEditColumn={() => setEditingColumn({ id: col.id, status_key: col.status_key, label: col.label })}
                 onDeleteColumn={() => handleDeleteColumn(col)}

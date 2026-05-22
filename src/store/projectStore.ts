@@ -370,7 +370,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           status: data.status || "backlog",
           priority: data.priority || "medium",
         })
-        .select()
+        .select("*, assignee:profiles!tasks_assignee_id_fkey(id, name, email, role), reporter:profiles!tasks_reporter_id_fkey(id, name, email, role)")
         .single();
 
       if (error) throw error;
@@ -392,10 +392,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       if (error) throw error;
 
+      const { data: fresh } = await supabase
+        .from("tasks")
+        .select("*, assignee:profiles!tasks_assignee_id_fkey(id, name, email, role), reporter:profiles!tasks_reporter_id_fkey(id, name, email, role)")
+        .eq("id", id)
+        .single();
+
       set((state) => ({
-        tasks: state.tasks.map((t) =>
-          t.id === id ? { ...t, ...data, updated_at: new Date().toISOString() } : t
-        ),
+        tasks: fresh
+          ? state.tasks.map((t) => (t.id === id ? fresh : t))
+          : state.tasks.map((t) =>
+              t.id === id ? { ...t, ...data, updated_at: new Date().toISOString() } : t
+            ),
       }));
     } catch (err) {
       set({

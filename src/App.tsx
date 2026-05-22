@@ -14,6 +14,9 @@ import BacklogPage from "./pages/Backlog/BacklogPage";
 import SprintsPage from "./pages/Sprints/SprintsPage";
 import ChatPage from "./pages/Chat/ChatPage";
 import ProjectGitHub from "./pages/Projects/ProjectGitHub";
+import TaskDetailPage from "./pages/TaskDetailPage";
+import DashboardPage from "./pages/DashboardPage";
+import ReportesPage from "./pages/ReportesPage";
 
 export default function App(): React.JSX.Element {
   const { setSession } = useAuthStore();
@@ -80,13 +83,15 @@ export default function App(): React.JSX.Element {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route index element={<PlaceholderPage title="Dashboard" />} />
+          <Route index element={<DashboardPage />} />
           <Route path="/proyectos" element={<ProjectsPage />} />
           <Route path="/board" element={<BoardPage />} />
+          <Route path="/board/task/:taskId" element={<TaskDetailPage />} />
           <Route path="/backlog" element={<BacklogPage />} />
+          <Route path="/backlog/task/:taskId" element={<TaskDetailPage />} />
           <Route path="/sprints" element={<SprintsPage />} />
           <Route path="/chat" element={<ChatPage />} />
-          <Route path="/reportes" element={<PlaceholderPage title="Reportes" />} />
+          <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/github" element={<ProjectGitHub />} />
         </Route>
       </Route>

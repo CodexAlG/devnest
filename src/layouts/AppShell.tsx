@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import Logo from "../components/Logo";
+import MembersSidebar from "../components/MembersSidebar";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: "\u229E" },
@@ -31,6 +32,7 @@ const pageTitles: Record<string, string> = {
 export default function AppShell(): React.JSX.Element {
   const { user, logout } = useAuthStore();
   const [title, setTitle] = useState("Dashboard");
+  const [membersOpen, setMembersOpen] = useState(false);
 
   useEffect(() => {
     const path = window.location.hash.replace("#", "") || "/";
@@ -316,6 +318,8 @@ export default function AppShell(): React.JSX.Element {
           <Outlet />
         </main>
       </div>
+
+      <MembersSidebar open={membersOpen} onToggle={() => setMembersOpen((m) => !m)} />
     </div>
   );
 }
